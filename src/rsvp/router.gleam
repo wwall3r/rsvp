@@ -6,8 +6,7 @@ import rsvp/web
 import wisp.{type Response}
 
 pub fn handle_request(req, ctx) {
-  use req <- web.middleware(req)
-  use <- web.static_middleware(req)
+  use req, _ctx <- web.middleware(req, ctx)
 
   // For handling HTTP transports
   // use <- omniserver.wisp_http_middleware(
@@ -48,15 +47,12 @@ fn home() -> Response {
   |> wisp.html_body(
     // content
     html.div([], [])
-    |> root_layout("")
+    |> root_layout()
     |> element.to_document_string_tree(),
   )
 }
 
-fn root_layout(
-  content: element.Element(a),
-  init_json: String,
-) -> element.Element(a) {
+fn root_layout(content: element.Element(a)) -> element.Element(a) {
   html.html([attribute.attribute("lang", "en")], [
     html.head([], [
       html.meta([attribute.charset("UTF-8")]),
@@ -65,16 +61,16 @@ fn root_layout(
         attribute.content("width=device-width, initial-scale=1.0"),
       ]),
       html.title([], "Title!"),
-      html.link([attribute.href("/priv/static/client.css")]),
-      html.script(
-        [attribute.type_("module"), attribute.src("/priv/static/client.mjs")],
-        "",
-      ),
-      // html.script([
-      //   attribute.src("/priv/static/lustre-server-component.mjs"),
-      //   attribute.type_("module"),
-      // ], []),
-      html.script([attribute.id("model"), attribute.type_("module")], init_json),
+      // html.link([attribute.href("/priv/static/client.css")]),
+    // html.script(
+    //   [attribute.type_("module"), attribute.src("/priv/static/client.mjs")],
+    //   "",
+    // ),
+    // html.script([
+    //   attribute.src("/priv/static/lustre-server-component.mjs"),
+    //   attribute.type_("module"),
+    // ], []),
+    // html.script([attribute.id("model"), attribute.type_("module")], init_json),
     ]),
     html.body([attribute.class("h-full w-full")], [
       html.div([attribute.id("app"), attribute.class("h-full w-full")], [

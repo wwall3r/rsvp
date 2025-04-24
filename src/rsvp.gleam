@@ -2,20 +2,19 @@ import dotenv_gleam
 import gleam/erlang/process
 import mist
 import rsvp/config
-import rsvp/context
+import rsvp/context.{Context}
 import rsvp/router
 import wisp
 import wisp/wisp_mist
 
 pub fn main() {
-  dotenv_gleam.config()
+  let _ = dotenv_gleam.config()
   wisp.configure_logger()
 
   let port = config.load_port()
   let secret_key_base = config.load_secret_key_base()
-
-  // let assert Ok(context) = context.new()
-  let context = 42
+  let assert Ok(priv) = wisp.priv_directory("rsvp")
+  let context = Context(static_path: priv <> "/static")
 
   // The handle_request function is partially applied with the context to make
   // the request handler function that only takes a request.
