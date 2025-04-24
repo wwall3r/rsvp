@@ -12,23 +12,7 @@ pub fn handle_request(req, ctx) {
   let method = req.method
 
   case method, path {
-    // Home
     Get, [] -> home()
-    //
-    // If you want extra control, this is how you'd do it without middleware:
-    //
-    // ["omni-http"], http.Post -> {
-    //   use req_body <- wisp.require_string_body(req)
-    //
-    //   case
-    //     req_body
-    //     |> omniserver.pipe(encoder_decoder(), handle(ctx, _))
-    //   {
-    //     Ok(Some(res_body)) -> wisp.response(200) |> wisp.string_body(res_body)
-    //     Ok(None) -> wisp.response(200)
-    //     Error(_) -> wisp.unprocessable_entity()
-    //   }
-    // }
     _, _ -> wisp.not_found()
   }
 }
@@ -64,10 +48,8 @@ fn root_layout(content: element.Element(a)) -> element.Element(a) {
     // ], []),
     // html.script([attribute.id("model"), attribute.type_("module")], init_json),
     ]),
-    html.body([attribute.class("h-full w-full")], [
-      html.div([attribute.id("app"), attribute.class("h-full w-full")], [
-        content,
-      ]),
+    html.body([attribute.attribute("hx-boost", "true")], [
+      html.div([attribute.id("app")], [content]),
     ]),
   ])
 }
