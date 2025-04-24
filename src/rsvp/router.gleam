@@ -8,14 +8,6 @@ import wisp.{type Response}
 pub fn handle_request(req, ctx) {
   use req, _ctx <- web.middleware(req, ctx)
 
-  // For handling HTTP transports
-  // use <- omniserver.wisp_http_middleware(
-  //   req,
-  //   "/omni-http",
-  //   encoder_decoder(),
-  //   handle(ctx, _),
-  // )
-
   let path = wisp.path_segments(req)
   let method = req.method
 
