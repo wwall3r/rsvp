@@ -1,0 +1,13 @@
+# Note that erlang is built from source by asdf, so you need a build chain
+# and erlang's deps
+#
+# # Install common ASDF plugin deps
+#   brew install coreutils automake autoconf openssl libyaml readline libxslt libtool
+#
+# # Install Erlang plugin deps
+#   brew install unixodbc wxmac
+#
+
+gleam 1.10.0
+erlang 27.3.3
+rebar 3.24.0
