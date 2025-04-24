@@ -1,3 +1,5 @@
+import pog.{type Connection}
+
 pub type Context {
-  Context(static_path: String)
+  Context(db: Connection, static_path: String)
 }

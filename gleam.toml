@@ -22,6 +22,8 @@ gleam_http = ">= 4.0.0 and < 5.0.0"
 dotenv_gleam = ">= 2.0.0 and < 3.0.0"
 envoy = ">= 1.0.2 and < 2.0.0"
 glotel = ">= 0.1.0 and < 1.0.0"
+cigogne = ">= 2.0.5 and < 3.0.0"
+pog = ">= 3.2.0 and < 4.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
