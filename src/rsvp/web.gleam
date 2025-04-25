@@ -20,7 +20,6 @@ pub fn middleware(
   handle_request(req, ctx)
 }
 
-// This appears to be set up properly but does not result in traces in jaeger
 fn trace_middleware(
   request: Request,
   ctx: Context,
@@ -35,9 +34,6 @@ fn trace_middleware(
     #("http.method", method),
     #("http.route", path),
   ])
-
-  echo "span created"
-  echo span_ctx
 
   let response = handler(request, ctx)
 
