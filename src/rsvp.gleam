@@ -14,8 +14,8 @@ pub fn main() {
   let _ = dotenv_gleam.config()
   wisp.configure_logger()
 
-  let port = config.load_port()
-  let secret_key_base = config.load_secret_key_base()
+  let port = config.port()
+  let secret_key_base = config.secret_key_base()
   let assert Ok(priv) = wisp.priv_directory("rsvp")
   let assert Ok(db_connection) = database.db_connect()
   let context = Context(db: db_connection, static_path: priv <> "/static")

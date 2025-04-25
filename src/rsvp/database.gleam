@@ -4,7 +4,7 @@ import pog
 import rsvp/config
 
 pub fn db_connect() -> Result(pog.Connection, Nil) {
-  let db_url = config.load_database_url()
+  let db_url = config.database_url()
 
   case ensure_db_exists(db_url) {
     Error(_) -> panic as "Database does not exist and could not be created!"

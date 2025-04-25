@@ -3,3 +3,4 @@
 /build
 .env
 erl_crash.dump
+.aider*
