@@ -22,6 +22,6 @@ pub fn render(req: Request, ctx: Context) {
     ]),
   ]
   |> layouts.nav_layout(req, ctx)
-  |> layouts.root_layout("RSVP")
+  |> layouts.root_layout(ctx, "RSVP")
   |> layouts.to_html_response()
 }

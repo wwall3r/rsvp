@@ -6,6 +6,7 @@ import wisp.{type Request}
 
 pub fn root_layout(
   content: List(element.Element(a)),
+  ctx: Context,
   page_title: String,
 ) -> element.Element(a) {
   html.html([attribute.attribute("lang", "en")], [
@@ -17,6 +18,7 @@ pub fn root_layout(
       ]),
       html.title([], page_title),
       html.link([
+        attribute.nonce(ctx.nonce),
         attribute.rel("preconnect"),
         attribute.href("https://api.fonts.coollabs.io"),
         attribute.crossorigin("anonymous"),

@@ -18,7 +18,8 @@ pub fn main() {
   let secret_key_base = config.secret_key_base()
   let assert Ok(priv) = wisp.priv_directory("rsvp")
   let assert Ok(db_connection) = database.db_connect()
-  let context = Context(db: db_connection, static_path: priv <> "/static")
+  let context =
+    Context(db: db_connection, nonce: "", static_path: priv <> "/static")
 
   // migrate db if necessary
   cigogne.execute_migrations_to_last(db_connection)

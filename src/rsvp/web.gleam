@@ -1,8 +1,12 @@
+import gleam/bit_array
+import gleam/crypto
 import gleam/http.{method_to_string}
 import gleam/int
+import gleam/string
+import gleam/yielder
 import glotel/span
 import glotel/span_kind
-import rsvp/context.{type Context}
+import rsvp/context.{type Context, Context}
 import wisp.{type Request, type Response}
 
 pub fn middleware(
@@ -16,8 +20,25 @@ pub fn middleware(
   use req <- wisp.handle_head(req)
   use <- wisp.serve_static(req, under: "/", from: ctx.static_path)
   use req, ctx <- trace_middleware(req, ctx)
+  use ctx <- add_nonce_to_context(ctx)
 
   handle_request(req, ctx)
+}
+
+fn add_nonce_to_context(
+  ctx: Context,
+  handler: fn(Context) -> Response,
+) -> Response {
+  let message = random_string(32)
+
+  let nonce =
+    crypto.hash(crypto.Sha512, <<message:utf8>>)
+    |> bit_array.base16_encode()
+    |> string.slice(0, 32)
+
+  let ctx = Context(..ctx, nonce: nonce)
+
+  handler(ctx)
 }
 
 fn trace_middleware(
@@ -49,4 +70,18 @@ fn trace_middleware(
   }
 
   response
+}
+
+fn random_string(length: Int) -> String {
+  let chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?"
+  let char_count = string.length(chars)
+
+  yielder.range(0, length)
+  |> yielder.map(fn(_) {
+    let index = int.random(char_count - 1)
+    string.slice(chars, index, 1)
+  })
+  |> yielder.to_list
+  |> string.concat
 }
