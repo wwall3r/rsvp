@@ -1,6 +1,7 @@
 import lustre/attribute
 import lustre/element
 import lustre/element/html
+import rsvp/components/core
 import rsvp/context.{type Context}
 import wisp.{type Request}
 
@@ -32,6 +33,7 @@ pub fn root_layout(
         attribute.href("/assets/css/index.css"),
       ]),
       html.script([attribute.src("/assets/js/htmx.min.js")], ""),
+      html.script([attribute.src("/assets/js/index.js")], ""),
     ]),
     html.body([attribute.attribute("hx-boost", "true")], content),
   ])
@@ -47,7 +49,12 @@ pub fn nav_layout(content: List(element.Element(a)), req: Request, ctx: Context)
           ]),
         ]),
         html.ul([], [
-          html.li([], [html.a([attribute.href("/login")], [html.text("Login")])]),
+          html.li([], [
+            html.a([attribute.href("/login")], [
+              core.icon("log-in", []),
+              html.text(" Login"),
+            ]),
+          ]),
         ]),
       ]),
     ]),

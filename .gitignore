@@ -1,6 +1,8 @@
 *.beam
 *.ez
 /build
+priv/static/assets/js/index*
+node_modules
 .env
 erl_crash.dump
 .aider*

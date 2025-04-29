@@ -1,0 +1,19 @@
+{
+  "name": "gleam-htmx",
+  "version": "1.0.0",
+  "description": "",
+  "main": "priv/static/assets/js/index.js",
+  "packageManager": "pnpm@8.6.12",
+  "scripts": {
+    "buildcommon": "esbuild --bundle --outfile=priv/static/assets/js/index.js src/js/index.js",
+    "build": "pnpm buildcommon --minify",
+    "dev": "pnpm buildcommon --watch=forever"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.25.3",
+    "lucide": "^0.503.0"
+  }
+}
