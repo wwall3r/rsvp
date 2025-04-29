@@ -26,6 +26,9 @@ WORKDIR /app
 COPY . .
 
 RUN gleam deps download
+
+# code generation from sql
+RUN gleam run -m squirrel
 RUN gleam export erlang-shipment
 
 # Runtime stage - slim image with only what's needed to run
