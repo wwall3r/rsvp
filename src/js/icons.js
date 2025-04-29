@@ -19,4 +19,4 @@ class LucideIcon extends HTMLElement {
 }
 
 customElements.define("lucide-icon", LucideIcon);
-// use as <icon data-icon="log-in" {...anyAttrs}></icon>
+// use as <lucide-icon data-icon="log-in" {...anyAttrs}></lucide-icon>
