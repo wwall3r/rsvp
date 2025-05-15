@@ -1,10 +1,13 @@
-import { LogIn } from "lucide";
+import { LoaderCircle, LogIn, Mail, Send } from "lucide";
 import replaceElement from "lucide/dist/esm/replaceElement.js";
 
 // this is the same as the typical lucide config ...
 const config = {
     icons: {
+        LoaderCircle,
         LogIn,
+        Mail,
+        Send,
         // any other icons you want to use here
     },
     // ... except that this is required as we are skipping the function which 

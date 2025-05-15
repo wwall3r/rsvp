@@ -61,6 +61,7 @@ packages = [
   { name = "tom", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "tom", source = "hex", outer_checksum = "0910EE688A713994515ACAF1F486A4F05752E585B9E3209D8F35A85B234C2719" },
   { name = "tote", version = "1.0.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "tote", source = "hex", outer_checksum = "A249892E26A53C668897F8D47845B0007EEE07707A1A03437487F0CD5A452CA5" },
   { name = "ts_chatterbox", version = "0.15.1", build_tools = ["rebar3"], requirements = ["hpack_erl"], otp_app = "chatterbox", source = "hex", outer_checksum = "4F75B91451338BC0DA5F52F3480FA6EF6E3A2AEECFC33686D6B3D0A0948F31AA" },
+  { name = "valid", version = "4.5.0", build_tools = ["gleam"], requirements = ["gleam_regexp", "gleam_stdlib", "non_empty_list"], otp_app = "valid", source = "hex", outer_checksum = "510EEF581F86EFA7D7364AFC41E36241411009B2434EC5ABC7A72CBC0AB5281A" },
   { name = "wisp", version = "1.6.0", build_tools = ["gleam"], requirements = ["directories", "exception", "gleam_crypto", "gleam_erlang", "gleam_http", "gleam_json", "gleam_stdlib", "logging", "marceau", "mist", "simplifile"], otp_app = "wisp", source = "hex", outer_checksum = "AE1C568FE30718C358D3B37666DF0A0743ECD96094AD98C9F4921475075F660A" },
   { name = "youid", version = "1.4.0", build_tools = ["gleam"], requirements = ["gleam_crypto", "gleam_erlang", "gleam_stdlib"], otp_app = "youid", source = "hex", outer_checksum = "DFC3718B6BFAD7FED4303C0DDEC3275D501466CF100E556936284F72B1723968" },
   { name = "zeptomail", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_http", "gleam_json", "gleam_stdlib"], source = "local", path = "../../zeptomail" },
@@ -82,5 +83,7 @@ lustre = { version = ">= 5.0.2 and < 6.0.0" }
 mist = { version = ">= 4.0.7 and < 5.0.0" }
 pog = { version = ">= 3.2.0 and < 4.0.0" }
 squirrel = { version = ">= 3.0.3 and < 4.0.0" }
+valid = { version = ">= 4.5.0 and < 5.0.0" }
 wisp = { version = ">= 1.6.0 and < 2.0.0" }
+youid = { version = ">= 1.4.0 and < 2.0.0" }
 zeptomail = { path = "../../zeptomail" }

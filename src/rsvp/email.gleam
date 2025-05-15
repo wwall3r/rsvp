@@ -1,4 +1,5 @@
 import gleam/httpc
+import gleam/uri
 import rsvp/config
 import wisp
 import zeptomail.{Addressee}
@@ -37,7 +38,7 @@ pub fn send_email(
 
 const auth_email = "auth@mail.wallw.dev"
 
-pub fn send_magic_link_email(address: String, token: String) {
+pub fn send_token_email(address: String, token: String, redirect: String) {
   let app_name = config.app_name()
   let base_url = config.base_url()
 
@@ -49,8 +50,10 @@ pub fn send_magic_link_email(address: String, token: String) {
     <> app_name
     <> "\n\n"
     <> base_url
-    <> "/login/"
+    <> "/token/"
     <> token
+    <> "?"
+    <> uri.query_to_string([#("r", redirect)])
     <> "\n\nIf you did not request this email, you can safely ignore it."
 
   send_email(

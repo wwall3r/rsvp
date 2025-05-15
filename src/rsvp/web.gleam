@@ -1,12 +1,18 @@
 import gleam/bit_array
 import gleam/crypto
 import gleam/http.{method_to_string}
+import gleam/http/request
 import gleam/int
+import gleam/list
+import gleam/option.{None, Some}
+import gleam/result
 import gleam/string
-import gleam/yielder
+import gleam/uri
 import glotel/span
 import glotel/span_kind
 import rsvp/context.{type Context, Context}
+import rsvp/htmx
+import rsvp/models/tokens
 import wisp.{type Request, type Response}
 
 pub fn middleware(
@@ -21,18 +27,79 @@ pub fn middleware(
   use <- wisp.serve_static(req, under: "/", from: ctx.static_path)
   use req, ctx <- trace_middleware(req, ctx)
   use ctx <- add_nonce_to_context(ctx)
+  use _, ctx <- add_user_to_context(req, ctx)
 
   handle_request(req, ctx)
+}
+
+const session_cookie_name = "_rsvp_session"
+
+pub fn get_session_cookie_name() {
+  session_cookie_name
+}
+
+fn add_user_to_context(
+  req: Request,
+  ctx: Context,
+  handle_request: fn(Request, Context) -> Response,
+) {
+  let ctx = case wisp.get_cookie(req, session_cookie_name, wisp.Signed) {
+    Ok(token) -> {
+      case tokens.verify_session_token(ctx.db, token) {
+        Ok(user) -> Context(..ctx, user: Some(user))
+
+        _ -> ctx
+      }
+    }
+    _ -> ctx
+  }
+
+  handle_request(req, ctx)
+}
+
+pub fn require_auth(
+  req: Request,
+  ctx: Context,
+  handle_request: fn(Request, Context) -> Response,
+) {
+  case ctx.user {
+    Some(_) -> handle_request(req, ctx)
+    None ->
+      req
+      |> get_login_redirect()
+      |> htmx.redirect(req)
+  }
+}
+
+pub fn require_anon(
+  req: Request,
+  ctx: Context,
+  handle_request: fn(Request, Context) -> Response,
+) {
+  case ctx.user {
+    None -> handle_request(req, ctx)
+    _ -> htmx.redirect(get_redirect(req), req)
+  }
+}
+
+pub fn get_login_redirect(req: Request) {
+  let redirect_uri = request.to_uri(req)
+
+  let redirect =
+    uri.Uri(..redirect_uri, scheme: None, host: None, port: None)
+    |> uri.to_string()
+
+  "/login?" <> uri.query_to_string([#("r", redirect)])
 }
 
 fn add_nonce_to_context(
   ctx: Context,
   handler: fn(Context) -> Response,
 ) -> Response {
-  let message = random_string(32)
+  let message = crypto.strong_random_bytes(32)
 
   let nonce =
-    crypto.hash(crypto.Sha512, <<message:utf8>>)
+    crypto.hash(crypto.Sha512, message)
     |> bit_array.base16_encode()
     |> string.slice(0, 32)
 
@@ -72,16 +139,29 @@ fn trace_middleware(
   response
 }
 
-fn random_string(length: Int) -> String {
-  let chars =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?"
-  let char_count = string.length(chars)
+pub fn get_redirect(req: Request) {
+  req
+  |> get_query_param("r")
+  |> redirect_validator()
+}
 
-  yielder.range(0, length)
-  |> yielder.map(fn(_) {
-    let index = int.random(char_count - 1)
-    string.slice(chars, index, 1)
-  })
-  |> yielder.to_list
-  |> string.concat
+/// This prevents anyone from sending a link with an external redirect
+/// such as https://evil.com
+pub fn redirect_validator(input: String) {
+  case input {
+    // any relative path
+    "/" <> _ -> input
+
+    // otherwise just redirect to the events page
+    _ -> "/events"
+  }
+}
+
+pub fn get_query_param(req: Request, key: String) {
+  req.query
+  |> option.unwrap("")
+  |> uri.parse_query()
+  |> result.unwrap([])
+  |> list.key_find(key)
+  |> result.unwrap("")
 }
