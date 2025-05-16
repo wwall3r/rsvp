@@ -149,7 +149,10 @@ pub fn get_redirect(req: Request) {
 /// such as https://evil.com
 pub fn redirect_validator(input: String) {
   case input {
-    // any relative path
+    // scheme-relative paths are not valid
+    "//" <> _ -> "/events"
+
+    // any relative path is valid
     "/" <> _ -> input
 
     // otherwise just redirect to the events page
