@@ -1,7 +1,11 @@
 import gleam/http.{Get}
 import gleam/string
 import rsvp/context.{type Context}
+import rsvp/pages/events
 import rsvp/pages/home
+import rsvp/pages/login
+import rsvp/pages/logout
+import rsvp/pages/token
 import rsvp/web
 import wisp.{type Response}
 
@@ -21,6 +25,10 @@ pub fn handle_request(req, ctx) {
 
   case method, path {
     Get, [] -> home.render(req, ctx)
+    _, ["login", ..] -> login.handle_request(req, ctx)
+    _, ["logout"] -> logout.handle_request(req, ctx)
+    _, ["events", ..] -> events.handle_request(req, ctx)
+    _, ["token", ..] -> token.handle_request(req, ctx)
     _, _ -> wisp.not_found()
   }
   |> wisp.set_header("Content-Security-Policy", content_security_policy)

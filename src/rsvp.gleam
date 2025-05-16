@@ -1,6 +1,7 @@
 import cigogne
 import dotenv_gleam
 import gleam/erlang/process
+import gleam/option
 import gleam/result
 import mist
 import rsvp/config
@@ -19,7 +20,12 @@ pub fn main() {
   let assert Ok(priv) = wisp.priv_directory("rsvp")
   let assert Ok(db_connection) = database.db_connect()
   let context =
-    Context(db: db_connection, nonce: "", static_path: priv <> "/static")
+    Context(
+      db: db_connection,
+      nonce: "",
+      static_path: priv <> "/static",
+      user: option.None,
+    )
 
   // migrate db if necessary
   cigogne.execute_migrations_to_last(db_connection)
