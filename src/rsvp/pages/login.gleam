@@ -9,7 +9,9 @@ import rsvp/context.{type Context}
 import rsvp/htmx
 import rsvp/layouts
 import rsvp/models/auth
+import rsvp/utils
 import rsvp/web
+import snag
 import valid/experimental as valid
 import wisp.{type Request}
 
@@ -94,51 +96,35 @@ fn handle_submit(req: Request, ctx: Context) {
     |> result.unwrap("")
     |> web.redirect_validator()
 
-  let input_email =
+  let email =
     formdata.values
     |> list.key_find("email")
     |> result.unwrap("")
 
-  let #(email, errors) = email_validator(input_email)
+  use email <- utils.try_and_map_error(email_validator(email), fn(errors) {
+    case htmx.is_htmx_request(req) {
+      True ->
+        LoginForm(email:, errors:, redirect:)
+        |> login_form()
+        |> layouts.to_html_status(422)
 
-  case errors {
-    [] -> {
-      case auth.email_user_with_magic_link(ctx.db, email, redirect) {
-        Ok(_) ->
-          case htmx.is_htmx_request(req) {
-            True ->
-              instructions()
-              |> layouts.to_html_response()
-
-            False ->
-              wisp.redirect(
-                "/login/instructions?"
-                <> uri.query_to_string([#("email", email)]),
-              )
-          }
-
-        _ -> {
-          case htmx.is_htmx_request(req) {
-            True ->
-              LoginForm(email:, redirect:, errors: [
-                "Could not create user. Please try again later",
-              ])
-              |> login_form()
-              |> layouts.to_html_status(422)
-
-            False ->
-              // TODO: show errors somehow?
-              wisp.redirect(
-                "/login?" <> uri.query_to_string([#("r", redirect)]),
-              )
-          }
-        }
-      }
+      False ->
+        // TODO: show errors somehow?
+        wisp.redirect("/login?" <> uri.query_to_string([#("r", redirect)]))
     }
-    errors -> {
+  })
+
+  use _ <- utils.try_and_map_error(
+    auth.email_user_with_magic_link(ctx.db, email, redirect),
+    fn(snag) {
+      // TODO: gotta get this on the otel trace
+      wisp.log_error(snag.pretty_print(snag))
+
       case htmx.is_htmx_request(req) {
         True ->
-          LoginForm(email:, errors:, redirect:)
+          LoginForm(email:, redirect:, errors: [
+            "Could not create user. Please try again later",
+          ])
           |> login_form()
           |> layouts.to_html_status(422)
 
@@ -146,7 +132,18 @@ fn handle_submit(req: Request, ctx: Context) {
           // TODO: show errors somehow?
           wisp.redirect("/login?" <> uri.query_to_string([#("r", redirect)]))
       }
-    }
+    },
+  )
+
+  case htmx.is_htmx_request(req) {
+    True ->
+      instructions()
+      |> layouts.to_html_response()
+
+    False ->
+      wisp.redirect(
+        "/login/instructions?" <> uri.query_to_string([#("email", email)]),
+      )
   }
 }
 
@@ -165,7 +162,15 @@ fn render_instructions(req: Request, ctx: Context) {
 }
 
 fn email_validator(input: String) {
-  // TODO: the validator here is rather simple. Maybe keep looking for a better one?
   input
-  |> valid.string_is_email("Please enter a valid email")
+  |> valid.validate(check_email)
+}
+
+fn check_email(input: String) {
+  // TODO: the validator here is rather simple. Maybe keep looking for a better one?
+  use result <- valid.check(
+    input,
+    valid.string_is_email("Please enter a valid email"),
+  )
+  valid.ok(result)
 }

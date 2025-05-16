@@ -1,16 +1,12 @@
+import gleam/int
 import pog
 import rsvp/models/id.{type Id}
+import rsvp/models/pog_utils.{pog_error_to_snag}
 import rsvp/models/users/sql
-import wisp
+import snag
 
 pub type User {
   User(id: Id(User), email: String, name: String)
-}
-
-pub type UserError {
-  CreateUserError
-  GetUserError
-  UpdateUserError
 }
 
 pub fn create_user(db: pog.Connection, email email: String, name name: String) {
@@ -22,10 +18,13 @@ pub fn create_user(db: pog.Connection, email email: String, name name: String) {
         name: user_row.name,
       ))
 
-    _ -> {
-      wisp.log_error("Could not create user")
-      Error(CreateUserError)
-    }
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count) <> " users were created. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(pog_error, "Could not create user with email " <> email)
   }
 }
 
@@ -38,10 +37,17 @@ pub fn get_user(db: pog.Connection, user_id: Id(User)) {
         name: user_row.name,
       ))
 
-    _ -> {
-      wisp.log_error("Could not get user by id")
-      Error(GetUserError)
-    }
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count)
+        <> " users were returned via id. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(
+        pog_error,
+        "Could not get user by id " <> id.to_string(user_id),
+      )
   }
 }
 
@@ -54,10 +60,14 @@ pub fn get_user_by_email(db: pog.Connection, email: String) {
         name: user_row.name,
       ))
 
-    _ -> {
-      wisp.log_error("Could not get user by email")
-      Error(GetUserError)
-    }
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count)
+        <> " users were returned via email. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(pog_error, "Could not get user by email " <> email)
   }
 }
 
@@ -73,9 +83,15 @@ pub fn update_user(db: pog.Connection, user: User) {
         name: user_row.name,
       ))
 
-    _ -> {
-      wisp.log_error("Could not update user")
-      Error(UpdateUserError)
-    }
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count) <> " users were updated. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(
+        pog_error,
+        "Could not update user " <> id.to_string(user.id),
+      )
   }
 }

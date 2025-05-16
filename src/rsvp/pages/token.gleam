@@ -9,7 +9,9 @@ import rsvp/context.{type Context}
 import rsvp/htmx
 import rsvp/layouts
 import rsvp/models/tokens
+import rsvp/utils
 import rsvp/web
+import snag
 import wisp.{type Request}
 
 pub fn handle_request(req: Request, ctx: Context) {
@@ -87,47 +89,59 @@ fn handle_submit(req: Request, ctx: Context) {
     |> list.key_find("token")
     |> result.unwrap("")
 
-  case tokens.verify_email_token(ctx.db, token, "login") {
-    Ok(user) -> {
-      // create a session token and set the cookie
-      let #(str_token, token) = tokens.build_session_token(user)
+  use user <- utils.try_and_map_error(
+    tokens.verify_email_token(ctx.db, token, "login"),
+    fn(snag) {
+      // TODO: gotta get this on the otel trace
+      wisp.log_error(snag.pretty_print(snag))
 
-      case tokens.create_token(ctx.db, token) {
-        Ok(_) -> {
-          redirect
-          |> htmx.redirect(req)
-          |> wisp.set_cookie(
-            req,
-            web.get_session_cookie_name(),
-            str_token,
-            wisp.Signed,
-            30 * 24 * 60 * 60,
-          )
-        }
-
-        _ -> {
-          wisp.log_error("Could not create session")
-          htmx.redirect("/", req)
-        }
-      }
-    }
-    _ -> {
       case htmx.is_htmx_request(req) {
         True ->
           redirect
-          |> invalid()
+          |> invalid("The provided link was invalid or has expired.")
+          |> layouts.to_html_status(422)
+
+        False ->
+          // TODO: show errors somehow?
+          wisp.redirect("/token?" <> uri.query_to_string([#("r", redirect)]))
+      }
+    },
+  )
+
+  let #(str_token, token) = tokens.build_session_token(user)
+
+  use _token <- utils.try_and_map_error(
+    tokens.create_token(ctx.db, token),
+    fn(snag) {
+      // TODO: gotta get this on the otel trace
+      wisp.log_error(snag.pretty_print(snag))
+
+      case htmx.is_htmx_request(req) {
+        True ->
+          redirect
+          |> invalid("Could not create session. Please try again later.")
           |> layouts.to_html_status(422)
 
         False ->
           wisp.redirect("/token?" <> uri.query_to_string([#("r", redirect)]))
       }
-    }
-  }
+    },
+  )
+
+  redirect
+  |> htmx.redirect(req)
+  |> wisp.set_cookie(
+    req,
+    web.get_session_cookie_name(),
+    str_token,
+    wisp.Signed,
+    30 * 24 * 60 * 60,
+  )
 }
 
-fn invalid(redirect: String) {
+fn invalid(redirect: String, error: String) {
   html.div([], [
-    html.p([], [html.text("The provided link was invalid or has expired.")]),
+    html.p([], [html.text(error)]),
     html.a(
       [
         attribute.role("button"),
@@ -143,7 +157,7 @@ fn render_invalid(req: Request, ctx: Context) {
     html.article([], [
       req
       |> web.get_redirect()
-      |> invalid(),
+      |> invalid("The provided link was invalid or has expired."),
     ]),
   ]
   |> layouts.nav_layout(req, ctx)

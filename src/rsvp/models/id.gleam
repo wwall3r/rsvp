@@ -18,3 +18,8 @@ pub fn to_uuid(value: Id(_)) {
   |> uuid.from_string()
   |> result.unwrap(uuid.v4())
 }
+
+pub fn to_string(value: Id(_)) {
+  let Id(str) = value
+  str
+}

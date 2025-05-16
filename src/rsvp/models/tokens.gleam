@@ -3,12 +3,15 @@
 
 import gleam/bit_array
 import gleam/crypto
+import gleam/int
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog
 import rsvp/models/id.{type Id, Id}
+import rsvp/models/pog_utils.{pog_error_to_snag}
 import rsvp/models/tokens/sql
 import rsvp/models/users.{type User, User}
+import snag
 
 const rand_size = 32
 
@@ -19,14 +22,6 @@ pub type Token {
     context: String,
     sent_to: Option(String),
   )
-}
-
-pub type TokenError {
-  CreateTokenError
-  SessionVerifyError
-  EmailVerifyError
-  EmailDecodeError
-  MissingUUIDError
 }
 
 pub fn create_token(db: pog.Connection, token: Token) {
@@ -51,7 +46,16 @@ pub fn create_token(db: pog.Connection, token: Token) {
         sent_to: Some(token_row.sent_to),
       ))
 
-    _ -> Error(CreateTokenError)
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count) <> " tokens were created. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(
+        pog_error,
+        "Could not create token for " <> id.to_string(token.user_id),
+      )
   }
 }
 
@@ -101,7 +105,16 @@ pub fn verify_session_token(db: pog.Connection, str_token: String) {
         name: user_row.name,
       ))
 
-    _ -> Error(SessionVerifyError)
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count) <> " tokens were found. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(
+        pog_error,
+        "Could not verify session for token" <> str_token,
+      )
   }
 }
 
@@ -148,21 +161,28 @@ fn build_hashed_token(
 // if the token is being used within a certain period, depending on the
 // context. 
 pub fn verify_email_token(db: pog.Connection, token: String, context: String) {
-  case bit_array.base64_url_decode(token) {
-    Ok(decoded_token) -> {
-      let hashed_token = crypto.hash(crypto.Sha256, decoded_token)
+  use decoded_token <- result.try(
+    bit_array.base64_url_decode(token)
+    |> result.map_error(fn(_) {
+      snag.new("Could not decode token as base64 " <> token)
+    }),
+  )
 
-      case sql.verify_email_token(db, hashed_token, context) {
-        Ok(pog.Returned(1, [user_row])) ->
-          Ok(User(
-            id: id.from_uuid(user_row.id),
-            email: user_row.email,
-            name: user_row.name,
-          ))
-        _ -> Error(EmailVerifyError)
-      }
-    }
+  let hashed_token = crypto.hash(crypto.Sha256, decoded_token)
+  case sql.verify_email_token(db, hashed_token, context) {
+    Ok(pog.Returned(1, [user_row])) ->
+      Ok(User(
+        id: id.from_uuid(user_row.id),
+        email: user_row.email,
+        name: user_row.name,
+      ))
 
-    _ -> Error(EmailDecodeError)
+    Ok(pog.Returned(count, _)) ->
+      snag.error(
+        int.to_string(count) <> " tokens were found. Expected exactly one.",
+      )
+
+    Error(pog_error) ->
+      pog_error_to_snag(pog_error, "Could not verify email token " <> token)
   }
 }

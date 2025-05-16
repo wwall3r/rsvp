@@ -1,6 +1,7 @@
 import gleam/httpc
 import gleam/uri
 import rsvp/config
+import snag
 import wisp
 import zeptomail.{Addressee}
 
@@ -80,23 +81,13 @@ fn send_over_api(email: zeptomail.Email) {
 
       case decoded {
         Ok(_) -> Ok(Nil)
-
-        Error(zeptomail.ApiError(code, message, _details)) -> {
-          wisp.log_error("Error sending email: " <> code <> " " <> message)
-          Error(Nil)
-        }
-
-        Error(zeptomail.UnexpectedResponse(_)) -> {
-          wisp.log_error("Error decoding email result json.")
-          Error(Nil)
-        }
+        Error(zeptomail.ApiError(code, message, _details)) ->
+          snag.error("Error sending email: " <> code <> " " <> message)
+        Error(zeptomail.UnexpectedResponse(_)) ->
+          snag.error("Error decoding email result json")
       }
     }
 
-    Error(err) -> {
-      echo err
-      wisp.log_error("http error sending email")
-      Error(Nil)
-    }
+    Error(_err) -> snag.error("http error sending email")
   }
 }
