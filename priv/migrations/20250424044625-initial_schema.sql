@@ -73,7 +73,7 @@ create table responses(
   id uuid primary key default gen_random_uuid(),
   event_id uuid references events(id) on delete cascade,
   user_id uuid references users(id) on delete cascade,
-  guests integer not null constraint positive_guests check (guests > 0),
+  guests integer not null constraint zero_or_more_guests check (guests >= 0),
   message text,
   created_at timestamp not null default now(),
   updated_at timestamp not null default now(),
