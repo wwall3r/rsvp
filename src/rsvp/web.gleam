@@ -43,13 +43,11 @@ fn add_user_to_context(
   ctx: Context,
   handle_request: fn(Request, Context) -> Response,
 ) {
-  let token =
+  let user =
     req
     |> wisp.get_cookie(session_cookie_name, wisp.Signed)
     |> result.unwrap("")
-
-  let user =
-    tokens.verify_session_token(ctx.db, token)
+    |> tokens.verify_session_token(ctx.db, _)
     |> result.map(Some)
     |> result.unwrap(None)
 
