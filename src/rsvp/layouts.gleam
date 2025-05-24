@@ -1,3 +1,4 @@
+import gleam/option.{None, Some}
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -39,7 +40,11 @@ pub fn root_layout(
   ])
 }
 
-pub fn nav_layout(content: List(element.Element(a)), req: Request, ctx: Context) {
+pub fn nav_layout(
+  content: List(element.Element(a)),
+  _req: Request,
+  ctx: Context,
+) {
   [
     html.header([attribute.class("container")], [
       html.nav([], [
@@ -48,14 +53,25 @@ pub fn nav_layout(content: List(element.Element(a)), req: Request, ctx: Context)
             html.a([attribute.href("/")], [html.strong([], [html.text("RSVP")])]),
           ]),
         ]),
-        html.ul([], [
-          html.li([], [
-            html.a([attribute.href("/login")], [
-              core.icon("log-in", []),
-              html.text(" Login"),
+        html.ul([], case ctx.user {
+          Some(_user) -> [
+            html.li([], [
+              html.a([attribute.href("/events")], [html.text("Events")]),
             ]),
-          ]),
-        ]),
+            html.li([], [
+              html.a([attribute.href("/logout")], [html.text("Logout")]),
+            ]),
+          ]
+
+          None -> [
+            html.li([], [
+              html.a([attribute.href("/login")], [
+                core.icon("log-in", []),
+                html.text(" Login"),
+              ]),
+            ]),
+          ]
+        }),
       ]),
     ]),
     html.main([attribute.class("container")], content),
@@ -63,10 +79,14 @@ pub fn nav_layout(content: List(element.Element(a)), req: Request, ctx: Context)
 }
 
 pub fn to_html_response(content: element.Element(a)) {
-  wisp.response(200)
+  to_html_status(content, 200)
+}
+
+pub fn to_html_status(content: element.Element(a), status: Int) {
+  wisp.response(status)
   |> wisp.set_header("Content-Type", "text/html")
-  |> wisp.html_body(
+  |> wisp.string_body(
     content
-    |> element.to_document_string_tree(),
+    |> element.to_string(),
   )
 }

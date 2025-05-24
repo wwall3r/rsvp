@@ -12,7 +12,11 @@ pub fn db_connect() -> Result(pog.Connection, Nil) {
   }
 
   use db_config <- result.try(pog.url_config(db_url))
-  Ok(pog.connect(db_config))
+
+  db_config
+  |> pog.trace(True)
+  |> pog.connect()
+  |> Ok
 }
 
 /// Ensures the DB is created. I do this because it is really handy to be able
