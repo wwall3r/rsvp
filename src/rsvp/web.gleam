@@ -147,15 +147,20 @@ pub fn get_redirect(req: Request) {
 /// This prevents anyone from sending a link with an external redirect
 /// such as https://evil.com
 pub fn redirect_validator(input: String) {
+  let default = "/events"
+
   case input {
     // scheme-relative paths are not valid
-    "//" <> _ -> "/events"
+    "//" <> _ -> default
+
+    // logging in just to redirect to logout is kinda nutty
+    "/logout" <> _ -> default
 
     // any relative path is valid
     "/" <> _ -> input
 
     // otherwise just redirect to the events page
-    _ -> "/events"
+    _ -> default
   }
 }
 
