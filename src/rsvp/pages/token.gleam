@@ -11,7 +11,6 @@ import rsvp/layouts
 import rsvp/models/tokens
 import rsvp/utils
 import rsvp/web
-import snag
 import wisp.{type Request}
 
 pub fn handle_request(req: Request, ctx: Context) {
@@ -89,43 +88,33 @@ fn handle_submit(req: Request, ctx: Context) {
     |> list.key_find("token")
     |> result.unwrap("")
 
-  use user <- utils.try_and_map_error(
+  use user <- utils.try_or_return(
     tokens.verify_email_token(ctx.db, token, "login"),
-    fn(snag) {
-      // TODO: gotta get this on the otel trace
-      wisp.log_error(snag.pretty_print(snag))
+    utils.get_snag_handler(ctx, case htmx.is_htmx_request(req) {
+      True ->
+        redirect
+        |> invalid("The provided link was invalid or has expired.")
+        |> layouts.to_html_status(422)
 
-      case htmx.is_htmx_request(req) {
-        True ->
-          redirect
-          |> invalid("The provided link was invalid or has expired.")
-          |> layouts.to_html_status(422)
-
-        False ->
-          // TODO: show errors somehow?
-          wisp.redirect("/token?" <> uri.query_to_string([#("r", redirect)]))
-      }
-    },
+      False ->
+        // TODO: show errors somehow?
+        wisp.redirect("/token?" <> uri.query_to_string([#("r", redirect)]))
+    }),
   )
 
   let #(str_token, token) = tokens.build_session_token(user)
 
-  use _token <- utils.try_and_map_error(
+  use _token <- utils.try_or_return(
     tokens.create_token(ctx.db, token),
-    fn(snag) {
-      // TODO: gotta get this on the otel trace
-      wisp.log_error(snag.pretty_print(snag))
+    utils.get_snag_handler(ctx, case htmx.is_htmx_request(req) {
+      True ->
+        redirect
+        |> invalid("Could not create session. Please try again later.")
+        |> layouts.to_html_status(422)
 
-      case htmx.is_htmx_request(req) {
-        True ->
-          redirect
-          |> invalid("Could not create session. Please try again later.")
-          |> layouts.to_html_status(422)
-
-        False ->
-          wisp.redirect("/token?" <> uri.query_to_string([#("r", redirect)]))
-      }
-    },
+      False ->
+        wisp.redirect("/token?" <> uri.query_to_string([#("r", redirect)]))
+    }),
   )
 
   redirect

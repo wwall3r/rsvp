@@ -1,3 +1,7 @@
+import rsvp/context.{type Context}
+import snag
+import wisp.{type Response}
+
 // Might've just shat gold here.
 //
 // Since most of our request handlers need to return a Response, using the
@@ -9,13 +13,24 @@
 // producing the error (like Go but not as fugly).
 //
 // Didn't see anything like this in the std lib but maybe I'm missing it.
-pub fn try_and_map_error(
+pub fn try_or_return(
   result: Result(a, b),
-  map_error: fn(b) -> d,
-  next: fn(a) -> d,
+  map_error: fn(b) -> c,
+  next: fn(a) -> c,
 ) {
   case result {
     Ok(value) -> next(value)
     Error(err) -> map_error(err)
+  }
+}
+
+pub fn get_snag_handler(_ctx: Context, response: Response) {
+  fn(snag) {
+    // TODO: gotta get this in the otel trace
+    snag
+    |> snag.pretty_print()
+    |> wisp.log_error()
+
+    response
   }
 }
